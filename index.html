@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coin Toss Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f1efe9;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --text: #1a1a18;
+    --text2: #6b6a65;
+    --text3: #9e9d98;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --success-bg: #eaf3de;
+    --success-text: #3b6d11;
+    --warning-bg: #faeeda;
+    --warning-text: #854f0b;
+    --blue: #378ADD;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --surface: #2a2a27;
+      --surface2: #333330;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --text: #f0efe9;
+      --text2: #a8a79f;
+      --text3: #6b6a62;
+      --success-bg: #173404;
+      --success-text: #c0dd97;
+      --warning-bg: #412402;
+      --warning-text: #fac775;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text2);
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+  }
+
+  .tag-fair { background: var(--success-bg); color: var(--success-text); }
+  .tag-biased { background: var(--warning-bg); color: var(--warning-text); }
+
+  .coin {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    border: 2px solid var(--border2);
+    background: var(--surface2);
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .coin.flipping {
+    animation: spin 0.4s ease-out;
+  }
+
+  @keyframes spin {
+    0%   { transform: rotateY(0deg); }
+    50%  { transform: rotateY(90deg); }
+    100% { transform: rotateY(0deg); }
+  }
+
+  .prob-label {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .prob-label strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .bias-track {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .bias-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .bias-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+    margin-top: -6px;
+  }
+
+  input[type="range"]::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+  }
+
+  input[type="range"]::-moz-range-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface2);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+  }
+
+  .bias-slider {
+    direction: rtl;
+  }
+
+  .divider {
+    width: 100%;
+    height: 0.5px;
+    background: var(--border);
+  }
+
+  .results {
+    width: 100%;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .results.visible { display: flex; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .metric {
+    background: var(--surface2);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    text-align: center;
+  }
+
+  .metric-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .metric-sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  .bar-section { width: 100%; }
+
+  .bar-section-label {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+
+  .bar-wrap {
+    width: 100%;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 0.5px solid var(--border);
+  }
+
+  .bar-h {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  input[type="number"] {
+    width: 80px;
+    text-align: center;
+    padding: 6px 8px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  input[type="number"]:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px rgba(55,138,221,0.2);
+  }
+
+  .input-hint {
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  button {
+    width: 100%;
+    padding: 8px 16px;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  button:hover { background: var(--surface2); }
+  button:active { transform: scale(0.98); }
+
+  .play-icon {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  .analysis-panel {
+    display: none;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .analysis-panel.visible {
+    display: flex;
+  }
+
+  .analysis-copy {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .analysis-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .analysis-subtitle,
+  .analysis-note,
+  .analysis-help {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.45;
+  }
+
+  .analysis-help {
+    text-align: center;
+  }
+
+  .analysis-layout {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .chart-card,
+  .summary-card {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.9rem;
+  }
+
+  .chart-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .chart-label {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .chart-box {
+    width: 100%;
+    aspect-ratio: 3.2 / 1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+  }
+
+  .chart-box svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  @media (max-width: 620px) {
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .summary-metric {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    text-align: center;
+    border: 0.5px solid var(--border);
+  }
+
+  .summary-metric.wide {
+    grid-column: 1 / -1;
+  }
+
+  .summary-value {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .summary-detail {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  .axis-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .experiment-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .experiment-actions button {
+    max-width: 320px;
+  }
+
+  .experiment-hint {
+    font-size: 13px;
+    color: var(--text2);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div>
+    <h1>Coin Toss Simulator</h1>
+    <p class="subtitle">Coin A is always fair. Bias Coin B with the slider.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- Coin A -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Coin A</span>
+        <span class="tag tag-fair">Fair</span>
+      </div>
+      <div class="coin" id="coinA">🪙</div>
+      <p class="prob-label">P(heads) = <strong id="probA">50%</strong></p>
+      <div class="divider"></div>
+      <div class="results" id="resultsA">
+        <div class="results-grid">
+          <div class="metric">
+            <div class="metric-label">Heads</div>
+            <div class="metric-value" id="headsA">—</div>
+            <div class="metric-sub" id="headsPctA"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Tails</div>
+            <div class="metric-value" id="tailsA">—</div>
+            <div class="metric-sub" id="tailsPctA"></div>
+          </div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-section-label">Heads ratio</div>
+          <div class="bar-wrap"><div class="bar-h" id="barA" style="width:50%"></div></div>
+        </div>
+      </div>
+      <div class="input-row">
+        <input type="number" id="nA" value="100" min="1" max="1000000">
+        <span class="input-hint">tosses</span>
+      </div>
+    </div>
+
+    <!-- Coin B -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Coin B</span>
+        <span class="tag tag-fair" id="tagB">Fair</span>
+      </div>
+      <div class="coin" id="coinB">🪙</div>
+      <p class="prob-label">P(heads) = <strong id="probB">50%</strong></p>
+      <div class="bias-track">
+        <div class="bias-labels"><span>100% heads</span><span>100% tails</span></div>
+        <input type="range" min="0" max="100" value="50" step="1" id="biasSlider" class="bias-slider" oninput="updateBias(this.value)">
+        <div class="bias-hint">heads ← drag bias → tails</div>
+      </div>
+      <div class="divider"></div>
+      <div class="results" id="resultsB">
+        <div class="results-grid">
+          <div class="metric">
+            <div class="metric-label">Heads</div>
+            <div class="metric-value" id="headsB">—</div>
+            <div class="metric-sub" id="headsPctB"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Tails</div>
+            <div class="metric-value" id="tailsB">—</div>
+            <div class="metric-sub" id="tailsPctB"></div>
+          </div>
+        </div>
+        <div class="bar-section">
+          <div class="bar-section-label">Heads ratio</div>
+          <div class="bar-wrap"><div class="bar-h" id="barB" style="width:50%"></div></div>
+        </div>
+      </div>
+      <div class="input-row">
+        <input type="number" id="nB" value="100" min="1" max="1000000">
+        <span class="input-hint">tosses</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="experiment-actions">
+    <button onclick="simulateExperiment()">
+      <svg class="play-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2.5l10 5.5-10 5.5z"/></svg>
+      Simulate Experiment
+    </button>
+    <p class="experiment-hint">Each run tosses both coins, then compares the two observed heads rates with a Z-test.</p>
+  </div>
+
+  <div class="panel analysis-panel" id="analysisPanel">
+    <div class="analysis-copy">
+      <div class="analysis-title">Two-proportion Z-test</div>
+      <p class="analysis-subtitle">This compares the heads rates from the left and right panels under the null hypothesis that both coins are equally fair.</p>
+    </div>
+
+    <p class="analysis-help" id="analysisHelp">Click Simulate Experiment to run both arms and compare the observed heads rates.</p>
+
+    <div class="analysis-layout" id="analysisLayout" hidden>
+      <div class="chart-card">
+        <div class="chart-label">Null distribution of p_left - p_right</div>
+        <div class="chart-box" id="distributionPlot" aria-label="Null distribution chart"></div>
+        <div class="axis-labels">
+          <span id="axisMin">-0.20</span>
+          <span>0.00</span>
+          <span id="axisMax">0.20</span>
+        </div>
+        <p class="analysis-note" id="distributionCaption"></p>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-grid">
+          <div class="summary-metric">
+            <div class="metric-label">Observed gap</div>
+            <div class="summary-value" id="diffValue">—</div>
+            <div class="summary-detail">sample p_left - p_right</div>
+          </div>
+          <div class="summary-metric">
+            <div class="metric-label">Z score</div>
+            <div class="summary-value" id="zValue">—</div>
+            <div class="summary-detail">distance from the null mean</div>
+          </div>
+          <div class="summary-metric">
+            <div class="metric-label">Two-sided p-value</div>
+            <div class="summary-value" id="pValue">—</div>
+            <div class="summary-detail" id="pValueText"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let biasB = 0.5;
+  const simulationState = {
+    A: null,
+    B: null
+  };
+
+  function getRandomUnit() {
+    const buffer = new Uint32Array(1);
+    crypto.getRandomValues(buffer);
+    return buffer[0] / 4294967296;
+  }
+
+  function runSimulation(tossCount, headsProbability) {
+    let heads = 0;
+    let lastOutcome = 'tails';
+
+    for (let index = 0; index < tossCount; index++) {
+      const isHeads = getRandomUnit() < headsProbability;
+      if (isHeads) {
+        heads += 1;
+        lastOutcome = 'heads';
+      } else {
+        lastOutcome = 'tails';
+      }
+    }
+
+    return {
+      heads,
+      tails: tossCount - heads,
+      lastOutcome
+    };
+  }
+
+  function formatSignedValue(value) {
+    const rounded = value.toFixed(3);
+    return value > 0 ? '+' + rounded : rounded;
+  }
+
+  function erfApprox(value) {
+    const sign = value < 0 ? -1 : 1;
+    const absolute = Math.abs(value);
+    const a1 = 0.254829592;
+    const a2 = -0.284496736;
+    const a3 = 1.421413741;
+    const a4 = -1.453152027;
+    const a5 = 1.061405429;
+    const p = 0.3275911;
+    const t = 1 / (1 + p * absolute);
+    const y = 1 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-absolute * absolute));
+    return sign * y;
+  }
+
+  function standardNormalCdf(value) {
+    return 0.5 * (1 + erfApprox(value / Math.SQRT2));
+  }
+
+  function standardNormalPdf(value) {
+    return Math.exp(-0.5 * value * value) / Math.sqrt(2 * Math.PI);
+  }
+
+  function runTwoPropZTest(leftSample, rightSample) {
+    const leftRate = leftSample.heads / leftSample.tossCount;
+    const rightRate = rightSample.heads / rightSample.tossCount;
+    const observedDiff = leftRate - rightRate;
+    const pooledRate = (leftSample.heads + rightSample.heads) / (leftSample.tossCount + rightSample.tossCount);
+    const standardError = Math.sqrt(pooledRate * (1 - pooledRate) * ((1 / leftSample.tossCount) + (1 / rightSample.tossCount)));
+    const zScore = standardError > 0 ? observedDiff / standardError : 0;
+    const tailProbability = 1 - standardNormalCdf(Math.abs(zScore));
+    const pValue = Math.max(0, Math.min(1, 2 * tailProbability));
+
+    return {
+      leftRate,
+      rightRate,
+      observedDiff,
+      pooledRate,
+      standardError,
+      zScore,
+      pValue
+    };
+  }
+
+  function buildDistributionSvg(stats) {
+    const width = 560;
+    const height = 250;
+    const padding = { top: 20, right: 28, bottom: 34, left: 28 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const sigma = Math.max(stats.standardError, 0.001);
+    const criticalZ = 1.96;
+    const criticalDiff = criticalZ * sigma;
+    const domain = Math.max(Math.abs(stats.observedDiff) * 1.4, criticalDiff * 1.25, sigma * 4, 0.08);
+    const points = [];
+    const sampleCount = 120;
+
+    function xToPixel(xValue) {
+      return padding.left + ((xValue + domain) / (domain * 2)) * chartWidth;
+    }
+
+    function yToPixel(yValue, peak) {
+      return padding.top + chartHeight - (yValue / peak) * chartHeight;
+    }
+
+    const peak = standardNormalPdf(0);
+    for (let index = 0; index <= sampleCount; index++) {
+      const xValue = -4 + (8 * index / sampleCount);
+      const yValue = standardNormalPdf(xValue);
+      const diffValue = xValue * sigma;
+      points.push([xToPixel(diffValue), yToPixel(yValue, peak)]);
+    }
+
+    const curvePath = points.map((point, index) => (index === 0 ? 'M' : 'L') + point[0].toFixed(2) + ' ' + point[1].toFixed(2)).join(' ');
+    const zeroX = xToPixel(0);
+    const observedX = xToPixel(Math.max(-domain, Math.min(domain, stats.observedDiff)));
+    const leftCriticalX = xToPixel(-criticalDiff);
+    const rightCriticalX = xToPixel(criticalDiff);
+    const criticalY = yToPixel(standardNormalPdf(criticalZ), peak);
+
+    return {
+      markup: `
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="distTitle distDesc">
+          <title id="distTitle">Null distribution for the difference in heads rates</title>
+          <desc id="distDesc">A normal curve centered at zero with the observed difference marked and the two alpha equals 0.05 critical boundaries shown.</desc>
+          <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
+          <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${width - padding.right}" y2="${padding.top + chartHeight}" stroke="currentColor" stroke-opacity="0.18"></line>
+          <path d="${curvePath}" fill="none" stroke="#378ADD" stroke-width="3" stroke-linecap="round"></path>
+          <line x1="${zeroX}" y1="${padding.top}" x2="${zeroX}" y2="${padding.top + chartHeight}" stroke="currentColor" stroke-opacity="0.18" stroke-dasharray="5 5"></line>
+          <line x1="${leftCriticalX}" y1="${padding.top + chartHeight}" x2="${leftCriticalX}" y2="${criticalY}" stroke="#c44343" stroke-width="1.5" stroke-dasharray="2 5"></line>
+          <line x1="${rightCriticalX}" y1="${padding.top + chartHeight}" x2="${rightCriticalX}" y2="${criticalY}" stroke="#c44343" stroke-width="1.5" stroke-dasharray="2 5"></line>
+          <line x1="${observedX}" y1="${padding.top}" x2="${observedX}" y2="${padding.top + chartHeight}" stroke="#854f0b" stroke-width="2.5"></line>
+          <text x="${zeroX}" y="${height - 10}" text-anchor="middle" fill="currentColor" fill-opacity="0.55" font-size="11">null = 0</text>
+          <text x="${leftCriticalX}" y="${height - 10}" text-anchor="middle" fill="#c44343" font-size="11">-1.96 SE</text>
+          <text x="${rightCriticalX}" y="${height - 10}" text-anchor="middle" fill="#c44343" font-size="11">+1.96 SE</text>
+          <text x="${Math.min(width - padding.right, observedX + 6)}" y="${padding.top + 14}" text-anchor="start" fill="#854f0b" font-size="11">observed</text>
+        </svg>
+      `,
+      minLabel: (-domain).toFixed(2),
+      maxLabel: domain.toFixed(2)
+    };
+  }
+
+  function describeEvidence(pValue) {
+    if (pValue < 0.01) return 'Very strong evidence against equal coins';
+    if (pValue < 0.05) return 'Moderate evidence against equal coins';
+    if (pValue < 0.1) return 'Weak evidence against equal coins';
+    return 'Little evidence against equal coins';
+  }
+
+  function renderAnalysis() {
+    const panel = document.getElementById('analysisPanel');
+    const layout = document.getElementById('analysisLayout');
+    const help = document.getElementById('analysisHelp');
+
+    panel.classList.add('visible');
+
+    if (!simulationState.A || !simulationState.B) {
+      layout.hidden = true;
+      help.hidden = false;
+      help.textContent = 'Click Simulate Experiment to run both arms and compare the observed heads rates.';
+      return;
+    }
+
+    const stats = runTwoPropZTest(simulationState.A, simulationState.B);
+    const distribution = buildDistributionSvg(stats);
+    layout.hidden = false;
+    help.hidden = true;
+    document.getElementById('distributionPlot').innerHTML = distribution.markup;
+    document.getElementById('axisMin').textContent = distribution.minLabel;
+    document.getElementById('axisMax').textContent = distribution.maxLabel;
+    document.getElementById('distributionCaption').textContent = 'Red dotted guides mark the two-sided alpha = 0.05 critical cutoffs. If the observed line falls beyond them, the null is rejected at the 5% level.';
+    document.getElementById('diffValue').textContent = formatSignedValue(stats.observedDiff * 100) + '%';
+    document.getElementById('zValue').textContent = formatSignedValue(stats.zScore);
+    document.getElementById('pValue').textContent = stats.pValue.toFixed(4);
+    document.getElementById('pValueText').textContent = describeEvidence(stats.pValue);
+  }
+
+  function updateResults(id, tossCount, result) {
+    const heads = result.heads;
+    const tails = result.tails;
+    const headsPct = (heads / tossCount * 100).toFixed(1);
+    const tailsPct = (tails / tossCount * 100).toFixed(1);
+    const coin = document.getElementById('coin' + id);
+
+    simulationState[id] = {
+      tossCount,
+      heads,
+      tails,
+      probability: id === 'A' ? 0.5 : biasB,
+      lastOutcome: result.lastOutcome
+    };
+
+    coin.textContent = result.lastOutcome === 'heads' ? '🙂' : '🦅';
+    document.getElementById('heads' + id).textContent = heads.toLocaleString();
+    document.getElementById('tails' + id).textContent = tails.toLocaleString();
+    document.getElementById('headsPct' + id).textContent = headsPct + '%';
+    document.getElementById('tailsPct' + id).textContent = tailsPct + '%';
+    document.getElementById('bar' + id).style.width = headsPct + '%';
+    document.getElementById('results' + id).classList.add('visible');
+    coin.classList.remove('flipping');
+    renderAnalysis();
+  }
+
+  function prepareCoinAnimation(id) {
+    const coin = document.getElementById('coin' + id);
+    coin.classList.remove('flipping');
+    void coin.offsetWidth;
+    coin.classList.add('flipping');
+  }
+
+  function updateBias(val) {
+    biasB = val / 100;
+    document.getElementById('probB').textContent = val + '%';
+    const tag = document.getElementById('tagB');
+    if (val == 50) {
+      tag.textContent = 'Fair';
+      tag.className = 'tag tag-fair';
+    } else if (val > 50) {
+      tag.textContent = 'Heads biased';
+      tag.className = 'tag tag-biased';
+    } else {
+      tag.textContent = 'Tails biased';
+      tag.className = 'tag tag-biased';
+    }
+  }
+
+  function simulateExperiment() {
+    const inputA = document.getElementById('nA');
+    const inputB = document.getElementById('nB');
+    const tossCountA = Math.max(1, Math.floor(Number(inputA.value)) || 0);
+    const tossCountB = Math.max(1, Math.floor(Number(inputB.value)) || 0);
+
+    if (!tossCountA || !tossCountB) return;
+
+    inputA.value = tossCountA;
+    inputB.value = tossCountB;
+    prepareCoinAnimation('A');
+    prepareCoinAnimation('B');
+
+    setTimeout(() => {
+      updateResults('A', tossCountA, runSimulation(tossCountA, 0.5));
+      updateResults('B', tossCountB, runSimulation(tossCountB, biasB));
+    }, 420);
+  }
+</script>
+</body>
+</html>
