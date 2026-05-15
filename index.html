@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coin Toss Simulator</title>
+<meta name="description" content="An interactive two-proportion Z-test and coin toss simulator for learning p-values, statistical significance, power, and binary-outcome experiments.">
+<title>Two-Proportion Z-Test Coin Toss Simulator</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -23,6 +24,9 @@
     --warning-bg: #faeeda;
     --warning-text: #854f0b;
     --blue: #378ADD;
+    --link: #1d5fa8;
+    --link-underline: rgba(29,95,168,0.35);
+    --shadow-lg: 0 18px 40px rgba(22, 24, 29, 0.14);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -39,6 +43,9 @@
       --success-text: #c0dd97;
       --warning-bg: #412402;
       --warning-text: #fac775;
+      --link: #8fc3ff;
+      --link-underline: rgba(143,195,255,0.5);
+      --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.38);
     }
   }
 
@@ -436,6 +443,125 @@
     gap: 0.75rem;
   }
 
+  .concept-card {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .concept-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .concept-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .concept-item {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .concept-item strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .concept-item a {
+    color: var(--link);
+    font-weight: 500;
+    text-decoration-line: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 2px;
+    text-decoration-color: var(--link-underline);
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+
+  .concept-item a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .concept-item a:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  .wiki-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    width: min(320px, calc(100vw - 24px));
+    padding: 0.85rem 0.9rem;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border2);
+    background: color-mix(in srgb, var(--surface) 94%, var(--bg) 6%);
+    box-shadow: var(--shadow-lg);
+    pointer-events: auto;
+  }
+
+  .wiki-preview[hidden] {
+    display: none;
+  }
+
+  .wiki-preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+  }
+
+  .wiki-preview-source {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.45rem;
+  }
+
+  .wiki-preview-body {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text2);
+  }
+
+  .wiki-preview-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .wiki-preview-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--link);
+    text-decoration: none;
+    border-bottom: 1px solid var(--link-underline);
+  }
+
+  .wiki-preview-link:hover {
+    border-bottom-color: currentColor;
+  }
+
+  .wiki-preview-link:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   .summary-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -496,8 +622,8 @@
 <div class="app">
 
   <div>
-    <h1>Coin Toss Simulator</h1>
-    <p class="subtitle">Set the heads probability for both coins, then compare the observed rates.</p>
+    <h1>Coin Toss Simulator for two proportions Z-test</h1>
+    <p class="subtitle">Explore how sample size, effect size, and randomness shape p-values in a two-proportion Z-test.</p>
   </div>
 
   <div class="grid">
@@ -591,8 +717,7 @@
   <div class="panel analysis-panel" id="analysisPanel">
     <div class="analysis-copy">
       <div class="analysis-title">Two-proportion Z-test</div>
-      <p class="analysis-subtitle">This compares the heads rates from the left and right coins.</p>
-      <p class="analysis-subtitle">Null hypothesis: both coins are equal: p_left = p_right.</p>
+      <p class="analysis-subtitle">This compares the observed heads rates from the left and right coins under the null hypothesis that both coins are equally fair: p_left = p_right.</p>
     </div>
 
     <p class="analysis-help" id="analysisHelp">Click Simulate Experiment to run both arms and compare the observed heads rates.</p>
@@ -622,7 +747,38 @@
           </div>
         </div>
       </div>
+
+      <div class="concept-card">
+        <div class="concept-title">How to read these results</div>
+        <div class="concept-list">
+          <p class="concept-item">
+            <strong>Large effects show up quickly.</strong>
+            If the two coins have very different true heads probabilities, even a small number of tosses can often detect a difference.
+            With small samples, our estimate of the size of that gap will change a lot from one experiment to another.
+            This is the same uncertainty that <a class="wiki-link" data-wiki-title="Confidence_interval" href="https://en.wikipedia.org/wiki/Confidence_interval" target="_blank" rel="noreferrer">confidence intervals</a> are designed to summarize.
+          </p>
+          <p class="concept-item">
+            <strong>Bigger samples reveal smaller effects.</strong>
+            Increasing the number of tosses shrinks random noise. Tests with bigger samples are more likely to detect subtle differences between the two coins.
+          </p>
+          <p class="concept-item">
+            <strong>Small experiments can be misleading.</strong>
+            Even when both coins are truly fair, short runs can make one coin look better just by chance.
+            Equally fair coins can still produce nonzero observed gaps in individual experiments.
+          </p>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+<div class="wiki-preview" id="wikiPreview" hidden>
+  <div class="wiki-preview-title" id="wikiPreviewTitle"></div>
+  <div class="wiki-preview-body" id="wikiPreviewBody"></div>
+  <div class="wiki-preview-actions">
+    <a class="wiki-preview-link" id="wikiPreviewLink" href="https://en.wikipedia.org/wiki/Confidence_interval" target="_blank" rel="noreferrer">
+      See full Wikipedia article
+    </a>
   </div>
 </div>
 
@@ -635,6 +791,13 @@
   const simulationState = {
     A: null,
     B: null
+  };
+
+  const wikiPreviewState = {
+    cache: new Map(),
+    activeLink: null,
+    hideTimer: null,
+    pinnedLink: null
   };
 
   function getRandomUnit() {
@@ -869,6 +1032,154 @@
       updateResults('B', tossCountB, runSimulation(tossCountB, coinProbabilities.B));
     }, 420);
   }
+
+  function getWikiPreviewElements() {
+    return {
+      card: document.getElementById('wikiPreview'),
+      title: document.getElementById('wikiPreviewTitle'),
+      body: document.getElementById('wikiPreviewBody'),
+      link: document.getElementById('wikiPreviewLink')
+    };
+  }
+
+  function positionWikiPreview(pointerEvent) {
+    const { card } = getWikiPreviewElements();
+    const offset = 16;
+    const bounds = card.getBoundingClientRect();
+    let left = pointerEvent.clientX + offset;
+    let top = pointerEvent.clientY + offset;
+
+    if (left + bounds.width > window.innerWidth - 12) {
+      left = window.innerWidth - bounds.width - 12;
+    }
+
+    if (top + bounds.height > window.innerHeight - 12) {
+      top = pointerEvent.clientY - bounds.height - offset;
+    }
+
+    card.style.left = Math.max(12, left) + 'px';
+    card.style.top = Math.max(12, top) + 'px';
+  }
+
+  async function fetchWikipediaSummary(title) {
+    if (wikiPreviewState.cache.has(title)) {
+      return wikiPreviewState.cache.get(title);
+    }
+
+    const request = fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title), {
+      headers: {
+        Accept: 'application/json'
+      }
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Preview unavailable');
+        }
+
+        return response.json();
+      })
+      .then((data) => ({
+        title: data.title || title.replace(/_/g, ' '),
+        summary: data.extract || 'Open Wikipedia to read the full article.'
+      }))
+      .catch(() => ({
+        title: title.replace(/_/g, ' '),
+        summary: 'Preview unavailable here. Open Wikipedia to read the full article.'
+      }));
+
+    wikiPreviewState.cache.set(title, request);
+    return request;
+  }
+
+  async function showWikiPreview(link, pointerEvent, options = {}) {
+    clearTimeout(wikiPreviewState.hideTimer);
+    wikiPreviewState.activeLink = link;
+    if (options.pin) {
+      wikiPreviewState.pinnedLink = link;
+    }
+
+    const { card, title, body, link: articleLink } = getWikiPreviewElements();
+    const topic = link.dataset.wikiTitle;
+    title.textContent = link.textContent.trim();
+    body.textContent = 'Loading Wikipedia preview...';
+    articleLink.href = link.href;
+    card.hidden = false;
+    positionWikiPreview(pointerEvent);
+
+    const preview = await fetchWikipediaSummary(topic);
+    if (wikiPreviewState.activeLink !== link) {
+      return;
+    }
+
+    title.textContent = preview.title;
+    body.textContent = preview.summary;
+    positionWikiPreview(pointerEvent);
+  }
+
+  function hideWikiPreview() {
+    if (wikiPreviewState.pinnedLink) {
+      return;
+    }
+
+    wikiPreviewState.hideTimer = setTimeout(() => {
+      wikiPreviewState.activeLink = null;
+      getWikiPreviewElements().card.hidden = true;
+    }, 80);
+  }
+
+  function closeWikiPreview() {
+    clearTimeout(wikiPreviewState.hideTimer);
+    wikiPreviewState.activeLink = null;
+    wikiPreviewState.pinnedLink = null;
+    getWikiPreviewElements().card.hidden = true;
+  }
+
+  function setupWikiPreviews() {
+    const wikiLinks = document.querySelectorAll('.wiki-link[data-wiki-title]');
+
+    wikiLinks.forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        if (wikiPreviewState.pinnedLink === link) {
+          closeWikiPreview();
+          return;
+        }
+
+        showWikiPreview(link, {
+          clientX: event.clientX,
+          clientY: event.clientY
+        }, { pin: true });
+      });
+
+      link.addEventListener('focus', () => {
+        const rect = link.getBoundingClientRect();
+        showWikiPreview(link, {
+          clientX: rect.left + rect.width / 2,
+          clientY: rect.bottom
+        });
+      });
+
+      link.addEventListener('blur', hideWikiPreview);
+    });
+
+    document.addEventListener('click', (event) => {
+      const clickedLink = event.target.closest('.wiki-link');
+      const clickedCard = event.target.closest('#wikiPreview');
+
+      if (!clickedLink && !clickedCard) {
+        closeWikiPreview();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeWikiPreview();
+      }
+    });
+  }
+
+  setupWikiPreviews();
 </script>
 </body>
 </html>
