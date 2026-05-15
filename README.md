@@ -5,8 +5,7 @@ Visit at: **https://eloyvallinaes.github.io/coin-toss-simulator/**
 
 ## What It Does
 
-- Simulates Coin A as a fair coin with $P(\text{heads}) = 0.5$
-- Lets you bias Coin B with a slider from tails-heavy to heads-heavy
+- Lets you set the heads probability for both Coin A and Coin B with independent sliders
 - Runs both experiments with configurable toss counts
 - Shows heads/tails counts, percentages, and a heads-ratio bar for each coin
 - Computes a two-sided two-proportion Z-test on the observed difference in heads rates
@@ -16,8 +15,8 @@ Visit at: **https://eloyvallinaes.github.io/coin-toss-simulator/**
 
 For each run:
 
-1. Coin A is simulated with a fixed heads probability of $0.5$.
-2. Coin B is simulated using the slider-selected heads probability.
+1. Coin A is simulated using its slider-selected heads probability.
+2. Coin B is simulated using its slider-selected heads probability.
 3. The app calculates the observed gap in sample proportions:
 
 $$
@@ -36,7 +35,7 @@ No build step or dependencies are required.
 ## Use Cases
 
 - Teaching basic probability and sampling variability
-- Demonstrating how bias changes observed outcomes
+- Demonstrating how different coin biases and sample sizes change observed outcomes
 - Explaining hypothesis testing with a simple visual example
 - Quick classroom or interview-style statistics demos
 
